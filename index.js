@@ -6,14 +6,13 @@ require("dotenv").config();
 
 const creds = JSON.parse(process.env.CREDS);
 
-console.log(creds[0].username, creds.length)
+console.log(creds[0].username, creds.length);
 for (let k = 0; k < creds.length; k++) {
-  const loop = parseInt(creds[k].loop)
-  const searchStrings = creds[k].keywords
-  searchJobs(searchStrings, k, loop)
+  const loop = parseInt(creds[k].loop);
+  const searchStrings = creds[k].keywords;
+  searchJobs(searchStrings, k, loop);
 }
 // searchJobs(searchStrings).catch((error) => console.error(error));
-
 
 async function searchJobs(searchStrings, k, loop) {
   try {
@@ -27,7 +26,9 @@ async function searchJobs(searchStrings, k, loop) {
     await page.goto("https://www.upwork.com/ab/account-security/login", {
       waitUntil: "domcontentloaded",
     });
-    await page.waitForNavigation();
+    await new Promise((resolve) => setTimeout(resolve, 6000));
+
+    // await page.waitForNavigation();
     await page.waitForSelector("#onetrust-accept-btn-handler", {
       visible: true,
     });
@@ -44,10 +45,13 @@ async function searchJobs(searchStrings, k, loop) {
     //navigating the jobs URL
 
     for (let i = 0; i < searchStrings.length; i++) {
-      const keywords = searchStrings[i]
+      const keywords = searchStrings[i];
       console.log("srarted searching for ", searchStrings[i]);
       for (let j = 0; j < loop; j++) {
-        console.log("loop executed for " + searchStrings[i] + " ", j + 1 + " times")
+        console.log(
+          "loop executed for " + searchStrings[i] + " ",
+          j + 1 + " times"
+        );
         await page.goto(
           `https://www.upwork.com/nx/search/jobs/?q=${encodeURIComponent(
             keywords
@@ -66,7 +70,7 @@ async function searchJobs(searchStrings, k, loop) {
           await new Promise((resolve) => setTimeout(resolve, 2000));
 
           await jobListing.click();
-          console.log(i + 1, " job executed")
+          console.log(i + 1, " job executed");
           // await page.waitForNavigation({ waitUntil: "domcontentloaded" });
           await new Promise((resolve) => setTimeout(resolve, 10000));
 
@@ -90,9 +94,9 @@ async function searchJobs(searchStrings, k, loop) {
 
           await page.waitForSelector(".job-tile-title");
         }
-        console.log("end line of J loop")
+        console.log("end line of J loop");
       }
-      console.log("exit from inner loop")
+      console.log("exit from inner loop");
     }
   } catch (error) {
     console.error("Error:", error);
