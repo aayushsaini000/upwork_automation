@@ -26,7 +26,7 @@ async function searchJobs(searchStrings, k, loop) {
     await page.goto("https://www.upwork.com/ab/account-security/login", {
       waitUntil: "domcontentloaded",
     });
-    await new Promise((resolve) => setTimeout(resolve, 6000));
+    await new Promise((resolve) => setTimeout(resolve, 60000));
 
     // await page.waitForNavigation();
     await page.waitForSelector("#onetrust-accept-btn-handler", {
@@ -40,7 +40,7 @@ async function searchJobs(searchStrings, k, loop) {
     await page.type("#login_password", creds[k].password);
     await page.click("#login_control_continue");
     await page.waitForNavigation({ waitUntil: "domcontentloaded" });
-    await new Promise((resolve) => setTimeout(resolve, 60000));
+    await new Promise((resolve) => setTimeout(resolve, 90000));
 
     //navigating the jobs URL
 
@@ -67,12 +67,12 @@ async function searchJobs(searchStrings, k, loop) {
 
         for (let i = 0; i < jobListings.length; i++) {
           const jobListing = jobListings[i];
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 20000));
 
           await jobListing.click();
           console.log(i + 1, " job executed");
           // await page.waitForNavigation({ waitUntil: "domcontentloaded" });
-          await new Promise((resolve) => setTimeout(resolve, 10000));
+          await new Promise((resolve) => setTimeout(resolve, 20000));
 
           await page.waitForSelector(
             ".air3-slider.air3-slider-job-details-modal",
