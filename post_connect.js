@@ -11,14 +11,6 @@ async function randomDelay(min = 5000, max = 10000) {
 }
 
 
-// async function moveAndClick(page, selector) {
-//     await page.waitForSelector(selector);
-//     const element = await page.$(selector);
-//     await element.hover();
-//     await randomDelay(20000, 50000);
-//     await element.click();
-//     await randomDelay(20000, 15000);
-// }
 
 async function moveAndClick(page, selector) {
     try {
@@ -117,107 +109,81 @@ async function loginToLinkedin(page) {
 
 }
 
-async function visitProfile(page, profileLink) {
-    try {
-        await page.goto(profileLink);
-        console.info(`Visited profile: ${profileLink}`);
-        await randomMouseMovement(page)
-        // Scroll to the bottom of the page
-        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-        await randomDelay(10000, 100000);
-        await randomMouseMovement(page)
-        try {
-            // Attempt to click on a button
-            const buttons = await page.$$('button');
-            if (buttons.length > 0) {
-                // Choose a random button to click
-                const randomIndex = Math.floor(Math.random() * buttons.length);
-                const buttonToClick = buttons[randomIndex];
-                await buttonToClick.click();
-                await randomDelay(10000, 100000);
-            }
-        } catch (error) {
-            // Log the error without breaking the script
-            console.error('Error clicking on a button:');
-        }
-        await randomMouseMovement(page)
-
-        const random = {
-            int: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
-            boolean: () => Math.random() >= 0.5
-        };
-
-        // Scroll up and down randomly
-        const scrollSteps = random.int(3, 5);
-        for (let i = 0; i < scrollSteps; i++) {
-            const scrollDirection = random.boolean() ? 'up' : 'down';
-            if (scrollDirection === 'up') {
-                await page.evaluate(() => window.scrollBy(0, -window.innerHeight));
-            } else {
-                await page.evaluate(() => window.scrollBy(0, window.innerHeight));
-            }
-            await randomDelay(10000, 100000);
-        }
-        await randomMouseMovement(page)
-        // Random delay before moving on
-        await randomDelay(10000, 50000);
-    } catch (error) {
-        console.log("Error in visitProfile:")
-    }
-}
-
-async function searchKeywordAndVisitProfiles(page, keyword, pageLimit, breakTimeMinutes, delaySeconds, startTime) {
-    try {
-        let pageCount = 1;
-        while (pageCount <= pageLimit) {
-            const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${keyword}&page=${pageCount}`;
-            await page.goto(searchUrl);
-            await randomMouseMovement(page)
-            const profileLinks = await page.$$eval('a[href*="/in/"][class*="app-aware-link"]', links => links.map(link => link.href));
-            console.log("===================>", searchUrl, pageCount, profileLinks)
-            for (const profileLink of profileLinks) {
-                let currentTime = new Date();
-                let timeElapsed = (currentTime - startTime) / 1000 / 60;
-                console.log(`Time elapsed: ${timeElapsed.toFixed(2)} minutes and breaktime is ${breakTimeMinutes}`);
-                if (breakTimeMinutes < timeElapsed.toFixed(2)) {
-                    console.info(`Taking a break for ${delaySeconds} minutes.`);
-                    await waitForNextRun(delaySeconds);
-                    startTime = new Date();
-                }
-                await visitProfile(page, profileLink);
-                await randomMouseMovement(page)
-                await page.goBack();
-                await randomDelay(20000, 60000);
-            }
-            await randomMouseMovement(page)
-
-            console.info(`Visited all profiles on page ${pageCount} for keyword '${keyword}'`);
-
-            pageCount++;
-            await randomDelay(10000, 100000);
-        }
-    } catch (error) {
-        console.log("Error in searchKeywordAndVisitProfiles:")
-    }
-}
-
-
 
 async function waitForNextRun(delaySeconds) {
-    console.info(`On break for ${delaySeconds / 3600} hours till the next run.`);
+    console.info(`On break for ${delaySeconds} seconds till the next run.`);
     await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
     console.info('Resuming execution after the delay.');
 }
 
 
 
+async function followPostsWhileScrolling(page, keyword, followCountLimit, breakTimeMinutes, delaySeconds, startTime) {
+    console.log("2155555555555555555", keyword)
+    const searchUrl = `https://www.linkedin.com/search/results/content/?keywords=${keyword}&origin=CLUSTER_EXPANSION`;
+    await page.goto(searchUrl);
+    let followCount = 0;
+    let lastHeight = await page.evaluate('document.body.scrollHeight');
+    console.log("2200000000000", followCount, followCountLimit)
+    while (followCount < followCountLimit) {
+        console.log("188888888888888")
+        try {
+            await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+            await randomDelay(2000, 5000);
+            const followButtons = await page.$$('.follow');
+            console.log("22777777777")
+            for (const button of followButtons) {
+                console.log("229999999999999")
+                if (followCount > followCountLimit) {
+                    console.log("23111111111")
+                    break;
+                }
+                let currentTime = new Date();
+                let timeElapsed = (currentTime - startTime) / 1000 / 60;
+                if (breakTimeMinutes < timeElapsed.toFixed(2)) {
+                    console.info(`Taking a break for ${delaySeconds} seconds.`);
+                    await waitForNextRun(delaySeconds);
+                    startTime = new Date();
+                }
+                try {
+                    await button.click();
+                    console.log("2355555555555", followCount, followCountLimit)
+                    followCount += 1;
+                    if (followCount >= followCountLimit) {
+                        console.info(`Taking a break for ${delaySeconds} seconds.`);
+                        await waitForNextRun(delaySeconds);
+                        startTime = new Date();
+                        break;
+                    }
+                    await randomDelay(2000, 6000);
+                } catch (e) {
+                    console.warn("Stale element reference. Skipping this button.");
+                    continue;
+                }
+            }
+            const newHeight = await page.evaluate('document.body.scrollHeight');
+            console.log("257777777777777")
+            if (newHeight === lastHeight) {
+                console.log("25999999999999")
+                break;
+            }
+            lastHeight = newHeight;
+        } catch (e) {
+            console.warn("Window closed unexpectedly. Terminating script.");
+            break;
+        }
+    }
+}
+
+
 
 async function main() {
     let startTime = new Date(); // Get the current time when the script starts
-    const delayHours = parseFloat(process.env.DELAY_HOURS || 5);
-    const delaySeconds = delayHours * 3600;
-    const pageLimit = parseInt(process.env.PAGE_LIMIT || 5);
-    const breakTimeMinutes = parseInt(process.env.BREAK_TIME_MINUTES || 60);
+    const delaySeconds = parseFloat(process.env.POST_DELAY_SECONDS || 5);
+    const breakTimeMinutes = parseInt(process.env.POST_BREAK_TIME_MINUTES || 60);
+    const followCountLimit = parseInt(process.env.POST_FOLLOW_COUNT || 10);
+    // const pageLimit = parseInt(process.env.PAGE_LIMIT || 5);
+
 
     const browser = await puppeteer.launch({
         headless: false, // Set to false to see the browser in action
@@ -246,14 +212,16 @@ async function main() {
         let currentTime = new Date(); // Get the current time
         let timeElapsed = (currentTime - startTime) / 1000 / 60; // Calculate the time elapsed in minutes
         console.log(`Time elapsed: ${timeElapsed.toFixed(2)} minutes`); // Log the time elapsed
-        const keywords = (process.env.PROFILE_VISIT_KEYWORDS || '').split(',');
+        const keywords = (process.env.POSTS_FOLLOW_KEYWORDS || '').split(',');
         for (const keyword of keywords) {
+            console.log("298888888888888888", keyword)
             if (breakTimeMinutes < timeElapsed.toFixed(2)) {
-                console.info(`Taking a break for ${delaySeconds} minutes.`);
+                console.info(`Taking a break for ${delaySeconds} seconds.`);
                 await waitForNextRun(delaySeconds);
                 startTime = new Date();
             }
-            await searchKeywordAndVisitProfiles(page, keyword.trim(), pageLimit, breakTimeMinutes, delaySeconds, startTime);
+            await followPostsWhileScrolling(page, keyword.trim(), followCountLimit, breakTimeMinutes, delaySeconds, startTime)
+            console.log("3188888888888888888")
             await randomDelay(30000, 50000);
         }
     }
